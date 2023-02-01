@@ -4,8 +4,6 @@
 #include <math.h>
 #include <limits.h>
 #include <string.h>
-#define ROW 9
-#define COL 10
 
 // Creating a shortcut for int, int pair type
 //typedef pair < int, int >  Pair;
@@ -51,6 +49,15 @@ set* newSet(int capacity) {
     s->itemsCount = 0;
     return s;
 }
+void deallocateSet(set* s){
+    if(s!=NULL){
+        if(s->items!=NULL){
+            free(s->items);
+        }
+        free(s);
+    }
+    
+}
 //TODO: Extremely inefficient
 int insert(set* s, pPair p) {
     for(int i=0;i<s->itemsCount;i++){
@@ -68,12 +75,15 @@ int RemoveItemInPosition(set* s,int position) {
     if (position >= s->itemsCount) {
         return 0;
     }
-    else {
+    else if (s->itemsCount>1)
+    {
         for (int i = position; i < s->itemsCount-1; i++) {
             s->items[i] = s->items[i + 1];
         }
-        return 1;
     }
+    s->itemsCount--;
+    return 1;
+
 }
 
 
@@ -99,6 +109,15 @@ stack* newStack(int capacity)
     return pt;
 }
 
+void deallocateStack(stack* s){
+    if(s!=NULL){
+        if(s->items!=NULL){
+            free(s->items);
+        }
+        free(s);
+    }
+    
+}
 // Utility function to return the size of the stack
 int size(stack* pt) {
     return pt->top + 1;
@@ -125,7 +144,7 @@ void push(stack* pt, Pair x)
         exit(EXIT_FAILURE);
     }
 
-    printf("Inserting %d\n", x);
+    //printf("Inserting %d\n", x);
 
     // add an element and increment the top's index
     pt->items[++pt->top] = x;
@@ -153,7 +172,7 @@ Pair pop(stack* pt)
         exit(EXIT_FAILURE);
     }
 
-    printf("Removing %d\n", peek(pt));
+    //printf("Removing %d\n", peek(pt));
 
     // decrement stack size by 1 and (optionally) return the popped element
     return pt->items[pt->top--];
@@ -169,10 +188,10 @@ Pair pop(stack* pt)
 
 
 
-int isValid(int grid[][COL], int row, int col) {
+int isValid(int **grid, int row, int col,int row_max, int col_max) {
     // Returns true if row number and column number
     // is in range
-    return (row >= 0) && (row < ROW) && (col >= 0) && (col < COL) && grid[row][col] == 1;
+    return (row >= 0) && (row < row_max) && (col >= 0) && (col < col_max) && grid[row][col] == 1;
 }
 int isDestination(int row, int col, Pair dest) {
     if (row == dest.first && col == dest.second)
@@ -196,13 +215,13 @@ double manhattanDistance(int row, int col, Pair dest) {
 
 // A Utility Function to trace the path from the source
 // to destination
-
-void tracePath(cell cellDetails[][COL], Pair dest) {
+int c=0;
+void tracePath(cell **cellDetails, Pair dest, int row_max, int col_max) {
     printf("\nThe Path is ");
     int row = dest.first;
     int col = dest.second;
 
-    stack* Path = newStack(90);
+    stack* Path = newStack(row_max*col_max);
 
     while (!(cellDetails[row][col].parent_i == row &&
         cellDetails[row][col].parent_j == col)) {
@@ -212,20 +231,57 @@ void tracePath(cell cellDetails[][COL], Pair dest) {
         row = temp_row;
         col = temp_col;
     }
+    int **board = (int **)malloc(row_max * sizeof(int *)); 
 
+    // for each row allocate Cols ints
+    for (int row = 0; row < row_max; row++) {
+        board[row] = (int *)malloc(col_max * sizeof(int));
+        for (int col = 0; col < col_max; col++){
+            board[row][col]=0;
+        }
+    }
     push(Path,make_pair(row, col));
     while (!isEmpty(Path)) {
         Pair p = peek(Path);
         pop(Path);
         printf("-> (%d,%d) ", p.first, p.second);
+        board[p.first][p.second]=1;
     }
+    printf("\n");
 
+    char path[100]="D:\\Archivio\\universita\\HighPerformanceComputing\\A-star-parallel\\outputs\\";
+    char *buf=(char*)malloc(10);
+    int rows,columns;
+    strcat(path,itoa(c,buf,10));
+    c++;
+    strcat(path,".txt");
+    FILE *pFile = fopen(path, "a");
+    for (int i = 0; i < row_max; i++) {
+        fprintf(pFile,"|");
+        for (int j = 0; j < col_max; j++) {
+            if (i == 0 && j == 0) {
+                fprintf(pFile,"D");
+            }
+            else if (i == 44 && j == 49) {
+                fprintf(pFile,"S");
+            }
+            else if (board[i][j] == 1) {
+                fprintf(pFile,"O");
+            }
+            else {
+                fprintf(pFile," ");
+            }
+        }
+        fprintf(pFile,"|\n");
+    }
+    fclose(pFile);
+    deallocateStack(Path);
     return;
 }
-int calculateCellValues(int grid[][COL], cell cellDetails[][COL], int closedList[][COL], set* openList, int i, int j, Pair dest, int curr_i, int curr_j) {
+int calculateCellValues(int **grid, cell **cellDetails, int **closedList, set* openList, int i, int j, Pair dest, int curr_i, int curr_j, int row_max,int col_max) {
     int foundDest = 0;
-    printf("calculating values for (%d,%d)\n", i, j);
-    if (isValid(grid, i, j) == 1) {
+    //printf("calculating values for (%d,%d)\n", i, j);
+    if (isValid(grid, i, j,row_max,col_max) == 1) {
         // If the destination cell is the same as the
         // current successor
         if (isDestination(i, j, dest) == 1) {
@@ -233,7 +289,7 @@ int calculateCellValues(int grid[][COL], cell cellDetails[][COL], int closedList
             cellDetails[i][j].parent_i = curr_i;
             cellDetails[i][j].parent_j = curr_j;
             printf("The destination cell is found\n");
-            tracePath(cellDetails, dest);
+            tracePath(cellDetails, dest,row_max,col_max);
             foundDest = 1;
         }
         // If the successor is already on the closed
@@ -255,7 +311,7 @@ int calculateCellValues(int grid[][COL], cell cellDetails[][COL], int closedList
             if (cellDetails[i][j].f == INT_MAX ||
                 cellDetails[i][j].f > fNew) {
                 insert(openList,make_p_pair(fNew, make_pair(i, j)));
-                printf("addedd %d-%d to openist\n", i, j);
+                //printf("addedd %d-%d to openist\n", i, j);
 
                 // Update the details of this cell
                 cellDetails[i][j].f = fNew;
@@ -269,35 +325,40 @@ int calculateCellValues(int grid[][COL], cell cellDetails[][COL], int closedList
     return foundDest;
 }
 
-void aStarSearch(int grid[][COL], Pair src, Pair dest) {
+void aStarSearch(int **grid, Pair src, Pair dest,int row_max,int col_max) {
     // If the source is out of range
-    if (isValid(grid, src.first, src.second) == 0) {
+    if (isValid(grid, src.first, src.second,row_max,col_max) == 0) {
         printf("Source is invalid\n");
         return;
     }
 
     // If the destination is out of range
-    if (isValid(grid, dest.first, dest.second) == 0) {
+    if (isValid(grid, dest.first, dest.second,row_max,col_max) == 0) {
         printf("Destination is invalid\n");
         return;
     }
-    if (isDestination(src.first, src.second, dest) ==
-        1) {
+    if (isDestination(src.first, src.second, dest) == 1) {
         printf("We are already at the destination\n");
         return;
     }
 
-    int closedList[ROW][COL];
-    memset(closedList, 0, sizeof(closedList));
-
+    int **closedList = (int **)malloc(row_max * sizeof(int *)); 
+    // for each row allocate Cols ints
+    for (int row = 0; row< row_max; row++) {
+        closedList[row] = (int *)malloc(col_max * sizeof(int));
+        memset(closedList[row], 0, col_max*sizeof(int));
+    }
     // Declare a 2D array of structure to hold the details
     // of that cell
-    cell cellDetails[ROW][COL];
-
+    cell **cellDetails = (cell **)malloc(row_max * sizeof(cell *)); 
+    // for each row allocate Cols ints
+    for (int row = 0; row< row_max; row++) {
+        cellDetails[row] = (cell *)malloc(col_max * sizeof(cell));
+    }
     int i, j;
 
-    for (i = 0; i < ROW; i++) {
-        for (j = 0; j < COL; j++) {
+    for (i = 0; i < row_max; i++) {
+        for (j = 0; j < col_max; j++) {
             cellDetails[i][j].f = INT_MAX;
             cellDetails[i][j].g = INT_MAX;
             cellDetails[i][j].h = INT_MAX;
@@ -320,7 +381,7 @@ void aStarSearch(int grid[][COL], Pair src, Pair dest) {
     int foundDest = 0;
 
     while (emptySet(openList)==0) {
-        printf("%d\n", openList->itemsCount);
+        printf("%d ", openList->itemsCount);
         pPair p = openList->items[0];
 
         // Remove this vertex from the open list
@@ -331,11 +392,11 @@ void aStarSearch(int grid[][COL], Pair src, Pair dest) {
         j = p.pair.second;
         closedList[i][j] = 1;
         int x, y;
-        printf("calculate [%d,%d]\n", i, j);
+        //printf("calculate [%d,%d]\n", i, j);
         for (x = -1; x < 2; x++) {
             for (y = -1; y < 2; y++) {
                 if (!(x == 0 && y == 0)) {
-                    if (calculateCellValues(grid, cellDetails, closedList, openList, i + x, j + y, dest, i, j)) {
+                    if (calculateCellValues(grid, cellDetails, closedList, openList, i + x, j + y, dest, i, j,row_max,col_max)) {
                         foundDest = 1;
                         return;
                     }
@@ -346,6 +407,7 @@ void aStarSearch(int grid[][COL], Pair src, Pair dest) {
         }
 
     }
+    deallocateSet(openList);
     if (foundDest == 0)
     {
         printf("Failed to find the Destination Cell\n");
@@ -353,147 +415,87 @@ void aStarSearch(int grid[][COL], Pair src, Pair dest) {
         return;
     }
 }
+
+
+
+int **load_matrix(char *filepath, int* rows,int* columns){
+    char *buffer;
+    size_t bufsize = 32;
+    size_t characters;
+    FILE *file=fopen(filepath,"r");
+    /*buffer = (char *)malloc(bufsize * sizeof(char));
+    if( buffer == NULL)
+    {
+        perror("Unable to allocate buffer");
+        exit(1);
+    }
+    characters = getline(&buffer,&bufsize,file);
+    rows=atoi(buffer);
+    characters = getline(&buffer,&bufsize,file);
+    columns=atoi(buffer);*/
+    fscanf(file, "(%d,%d)", rows,columns );
+    //printf("rows: %d\ncolumns: %d\n",*rows,*columns);
+    // allocate Rows rows, each row is a pointer to int
+    int **board = (int **)malloc(*rows * sizeof(int *)); 
+    int row,col;
+
+    // for each row allocate Cols ints
+    for (row = 0; row < *rows; row++) {
+        board[row] = (int *)malloc(*columns * sizeof(int));
+        for (col = 0; col < *columns; col++){
+            fscanf(file, "%d,", &board[row][col] );
+            printf("putting %d in board[%d][%d]\n",board[row][col],row,col);
+        }
+    }
+    fclose(file);
+    return board;
+}
 int main() {
+  for(int test_id=0;test_id<1;test_id++){
+    char path[100]="D:\\Archivio\\universita\\HighPerformanceComputing\\A-star-parallel\\inputs\\";
+    char *buf=(char*)malloc(10);
+    int rows,columns;
+    strcat(path,itoa(5,buf,10));
+    strcat(path,".txt");
+    printf("loading %s",path);
+    int **grid=load_matrix(path,&rows,&columns);
     /* Description of the Grid-
     1--> The cell is not blocked
     0--> The cell is blocked */
-    int grid[ROW][COL] = {
-      {
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1
-      },
-      {
-        1,
-        1,
-        1,
-        0,
-        1,
-        1,
-        1,
-        0,
-        1,
-        1
-      },
-      {
-        1,
-        1,
-        1,
-        0,
-        1,
-        1,
-        0,
-        1,
-        0,
-        1
-      },
-      {
-        0,
-        0,
-        1,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        1
-      },
-      {
-        1,
-        1,
-        1,
-        0,
-        0,
-        1,
-        1,
-        0,
-        1,
-        0
-      },
-      {
-        1,
-        0,
-        1,
-        0,
-        1,
-        1,
-        0,
-        1,
-        0,
-        0
-      },
-      {
-        1,
-        0,
-        0,
-        0,
-        0,
-        1,
-        0,
-        0,
-        0,
-        1
-      },
-      {
-        0,
-        0,
-        1,
-        1,
-        1,
-        1,
-        0,
-        1,
-        1,
-        1
-      },
-      {
-        1,
-        1,
-        1,
-        0,
-        0,
-        0,
-        1,
-        0,
-        0,
-        1
-      }
-    };
-    int i, j;
-    for (i = 0; i < ROW; i++) {
-        printf("|");
-        for (j = 0; j < COL; j++) {
-            if (i == 0 && j == 0) {
-                printf("D");
+    int srcsx[11]={44,41,42,41,44,46,47,47,47,40,40};
+    int srcsy[11]={49,48,46,49,46,46,46,48,49,45,46};
+    for(int k=0;k<10;k++){
+        printf("calculating path from %d,%d to 0,0\n",rows,columns);
+        int i, j;
+        for (i = 0; i < rows; i++) {
+            printf("|");
+            for (j = 0; j < columns; j++) {
+                if (i == 0 && j == 0) {
+                    printf("D");
+                }
+                else if (i == srcsx[k] && j == srcsy[k]) {
+                    printf("S");
+                }
+                else if (grid[i][j] == 1) {
+                    printf("O");
+                }
+                else {
+                    printf("X");
+                }
             }
-            else if (i == 4 && j == 2) {
-                printf("S");
-            }
-            else if (grid[i][j] == 1) {
-                printf(" ");
-            }
-            else {
-                printf("O");
-            }
+            printf("|\n");
         }
-        printf("|\n");
+        printf("\n");
+        // Source is the left-most bottom-most corner
+        Pair src = make_pair(srcsx[k], srcsy[k]);
+
+        // Destination is the left-most top-most corner
+        Pair dest = make_pair(0, 0);
+
+        aStarSearch(grid, src, dest,rows,columns);
     }
-    printf("\n");
-    // Source is the left-most bottom-most corner
-    Pair src = make_pair(4, 2);
-
-    // Destination is the left-most top-most corner
-    Pair dest = make_pair(0, 0);
-
-    aStarSearch(grid, src, dest);
-    system("pause");  
+    
+  }
+    //system("pause");  
     return (0);
 }

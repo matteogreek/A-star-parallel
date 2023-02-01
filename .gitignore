@@ -1,1 +1,5 @@
 *.exe
+testfile.txt
+outputs
+*.py
+.vscode
