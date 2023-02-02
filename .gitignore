@@ -3,3 +3,4 @@ testfile.txt
 outputs
 *.py
 .vscode
+.vs
