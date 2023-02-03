@@ -7,7 +7,7 @@
 #include <limits.h>
 #include <string.h>
 
-typedef struct{
+typedef struct {
 	int x, y;
 }Position;
 Position newPosition(int x, int y) {
@@ -18,14 +18,14 @@ Position newPosition(int x, int y) {
 }
 
 typedef struct Cell Cell;
-struct Cell{
+struct Cell {
 	Position position;
 	Cell* parent;
 	double f, g, h;
 	int traversable; //0->non traversable, 1 traversable
 	int visited;
 };
-Cell newCell(Position p,  int traversable) {
+Cell newCell(Position p, int traversable) {
 	Cell c;
 	c.position = p;
 	c.parent = NULL;
@@ -39,6 +39,12 @@ Cell newCell(Position p,  int traversable) {
 void printCell(Cell* c) {
 	printf("(%d,%d): f=%f, g=%f, h=%f, traversable=%d, visited=%d\n", c->position.x, c->position.y, c->f, c->g, c->h, c->traversable, c->visited);
 }
+Cell copyCell(Cell* cell) {
+	Cell c = newCell(cell->position, cell->traversable);
+	return c;
+
+}
+
 typedef struct {
 	int top;
 	int currentSize;
@@ -51,7 +57,7 @@ Stack newStack(int maxSize)
 	s.maxSize = maxSize;
 	s.top = -1;
 	s.currentSize = 1;
-	s.items = (Cell**) malloc(sizeof(Cell*));
+	s.items = (Cell**)malloc(sizeof(Cell*));
 	return s;
 }
 // Utility function to return the size of the stack
@@ -78,8 +84,8 @@ void push(Stack* pt, Cell* c)
 			exit(EXIT_FAILURE);
 		}
 		else {
-			Cell** newptr= (Cell**)realloc(pt->items, pt->currentSize*sizeof(Cell*) * 2);
-			
+			Cell** newptr = (Cell**)realloc(pt->items, pt->currentSize * sizeof(Cell*) * 2);
+
 			if (newptr) {
 				printf("Reallocating stack\n");
 				pt->items = newptr;
@@ -146,6 +152,7 @@ void printStack(Stack* s) {
 		printf("Stack is empty\n");
 	}
 }
+
 typedef struct {
 	Cell** items;
 	int itemsCount;
@@ -162,7 +169,7 @@ Set newSet(int capacity) {
 }
 void emptySet(Set* s) {
 	if (s != NULL) {
-		if(s->items!=NULL)
+		if (s->items != NULL)
 			free(s->items);
 		s->items = (Cell**)malloc(sizeof(Cell*));
 		s->currentSize = 1;
@@ -183,7 +190,7 @@ void insert(Set* s, Cell* c) {
 			exit(EXIT_FAILURE);
 		}
 		else {
-			Cell** newptr = (Cell**)realloc(s->items, s->currentSize*sizeof(Cell*) * 2);
+			Cell** newptr = (Cell**)realloc(s->items, s->currentSize * sizeof(Cell*) * 2);
 			if (newptr) {
 				printf("Reallocating set\n");
 				s->items = newptr;
@@ -198,7 +205,7 @@ void insert(Set* s, Cell* c) {
 	}
 
 	int insertPos = 0;
-	while (insertPos<s->itemsCount && s->items[insertPos]->f <= c->f) {
+	while (insertPos < s->itemsCount&& s->items[insertPos]->f <= c->f) {
 		insertPos++;
 	}
 	int i;
@@ -212,9 +219,9 @@ int removeItemInPosition(Set* s, int position) {
 	if (position >= s->itemsCount) {
 		return 0;
 	}
-	else if(s->itemsCount>1){
+	else if (s->itemsCount > 1) {
 		int i;
-		for (i = position; i < s->itemsCount-1; i++) {
+		for (i = position; i < s->itemsCount - 1; i++) {
 			s->items[i] = s->items[i + 1];
 		}
 	}
@@ -242,6 +249,7 @@ void printSet(Set* s) {
 		printf("Set is empty\n");
 	}
 }
+
 typedef struct {
 	Cell** grid;
 	int rows, cols;
@@ -263,7 +271,7 @@ Grid createGrid(const char* filepath) {
 		if (read == 0) { exit(1); }
 
 		read = fscanf(file, "dst=(%d,%d)\n", &dst.x, &dst.y);
-		if (read == 0) {exit(1);}
+		if (read == 0) { exit(1); }
 
 		g.grid = (Cell**)malloc(g.rows * sizeof(Cell*));
 		if (g.grid) {
@@ -274,20 +282,24 @@ Grid createGrid(const char* filepath) {
 					g.grid[r] = gridRow;
 					for (c = 0; c < g.cols; c++) {
 						int sup;
-						read=fscanf(file, "%d,", &sup);
+						read = fscanf(file, "%d,", &sup);
 						if (read) {
 							g.grid[r][c] = newCell(newPosition(r, c), sup);
 							if (!g.globalSrc && r == src.x && c == src.y) {
 								g.globalSrc = &g.grid[r][c];
-							}else if (!g.globalDest && r == dst.x && c == dst.y) {
+							}
+							else if (!g.globalDest && r == dst.x && c == dst.y) {
 								g.globalDest = &g.grid[r][c];
 							}
-						}else {exit(1);}
+						}
+						else { exit(1); }
 					}
-				}else { exit(1); }
+				}
+				else { exit(1); }
 			}
-			if (!g.grid || !g.globalSrc || !g.globalDest) { exit(1);}
-		}else { exit(1); }
+			if (!g.grid || !g.globalSrc || !g.globalDest) { exit(1); }
+		}
+		else { exit(1); }
 	}
 	else {
 		printf("Errore durante l'apertura di %s", filepath);
@@ -308,11 +320,11 @@ void emptyGrid(Grid* g) {
 	g->globalDest = NULL;
 }
 void printGrid(Grid* g) {
-	printf("rows=%d, columns= %d, src=(%d,%d), dst=(%d,%d)\n", g->rows,g->cols, g->globalSrc->position.x, g->globalSrc->position.y, g->globalDest->position.x, g->globalDest->position.y );
+	printf("rows=%d, columns= %d, src=(%d,%d), dst=(%d,%d)\n", g->rows, g->cols, g->globalSrc->position.x, g->globalSrc->position.y, g->globalDest->position.x, g->globalDest->position.y);
 	if (g->grid) {
-		int r,c;
+		int r, c;
 		for (r = 0; r < g->rows; r++) {
-			for (c = 0; c <g->cols; c++) {
+			for (c = 0; c < g->cols; c++) {
 				printCell(&(g->grid[r][c]));
 			}
 		}
@@ -321,6 +333,7 @@ void printGrid(Grid* g) {
 		printf("Grid is empty\n");
 	}
 }
+
 typedef struct {
 	Cell* gravity;
 	Stack* paths;
@@ -330,7 +343,7 @@ typedef struct {
 	int pathsCount;
 	int rows, cols;
 }LocalGrid;
-LocalGrid newLocalGrid(Cell** grid, int rank,int rows,int cols) {
+LocalGrid newLocalGrid(Cell** grid, int rank, int rows, int cols) {
 	LocalGrid lg;
 	lg.gravity = NULL;
 	lg.rank = rank;
@@ -342,7 +355,7 @@ LocalGrid newLocalGrid(Cell** grid, int rank,int rows,int cols) {
 	lg.grid = grid;
 	return lg;
 }
-void emptyLocalGrid(LocalGrid* lg){
+void emptyLocalGrid(LocalGrid* lg) {
 	if (lg->grid) {
 		int i;
 		for (i = 0; i < lg->rows; i++) {
@@ -354,6 +367,30 @@ void emptyLocalGrid(LocalGrid* lg){
 	lg->grid = NULL;
 	lg->gravity = NULL;
 	lg->paths = NULL;
+}
+LocalGrid copyGridInit(LocalGrid localGrid) {
+
+	int r, c;
+	Cell* grav=NULL;
+	Cell** grid = (Cell**)malloc(sizeof(Cell*) * localGrid.rows);
+	for (r = 0; r < localGrid.rows; r++) {
+		grid[r] = (Cell*)malloc(sizeof(Cell) * localGrid.cols); 
+		for (c = 0; c < localGrid.cols; c++) {
+			Cell newCell = copyCell(&(localGrid.grid[r][c]));
+			if(localGrid.gravity && localGrid.gravity== &(localGrid.grid[r][c]))
+				grav = &grid[r][c];
+			grid[r][c] = newCell;
+		}
+	}
+	LocalGrid lg = newLocalGrid(grid, localGrid.rank, localGrid.rows, localGrid.cols);
+	lg.gravity = grav;
+	/*for (r = 0; r < localGrid.rows; r++) {
+		for (c = 0; c < localGrid.cols; c++) {
+			Cell newCell = copyCell(&(localGrid.grid[r][c]));
+			lg.grid[r][c] = newCell;
+		}
+	}*/
+	return lg;
 }
 void printLocalGrid(LocalGrid* lg) {
 	printf("rank=%d\n", lg->rank);
@@ -369,7 +406,7 @@ void printLocalGrid(LocalGrid* lg) {
 		printf("Grid is empty\n");
 	}
 }
-double calculateHValue(Position* pos1, Position* pos2, double(*func)(Position*,Position*)) {
+double calculateHValue(Position* pos1, Position* pos2, double(*func)(Position*, Position*)) {
 	// Return using the distance formula
 	return func(pos1, pos2);
 }
@@ -379,7 +416,7 @@ double euclideanDistance(Position* pos1, Position* pos2) {
 double manhattanDistance(Position* pos1, Position* pos2) {
 	return abs(pos1->x - pos2->x) + abs(pos1->y - pos2->y);
 }
-Cell* calcualteClosestCell(LocalGrid* lg, Position goal) {
+Cell* calculateClosestCell(LocalGrid* lg, Position goal) {
 	/*Position gridStart = lg->grid[0][0].position;
 	int posx=0, posy=0;
 
@@ -407,7 +444,7 @@ Cell* calcualteClosestCell(LocalGrid* lg, Position goal) {
 		else { return NULL; }
 	}*/
 
-	//dumb version works like this
+	//dumb version works like this, implement version with set, visiting neighbors
 	Cell* cell = NULL;
 	double distance = INT_MAX;
 	int r, c;
@@ -424,23 +461,28 @@ Cell* calcualteClosestCell(LocalGrid* lg, Position goal) {
 	}
 	return cell;
 }
-int isValid(LocalGrid* lg, int r,int c) {
+int isValidInLG(LocalGrid* lg, int r, int c) {
 	// Returns true if row number and column number
 	// is in range
 	return (r >= 0) && (r < lg->rows) && (c >= 0) && (c < lg->cols) && lg->grid[r][c].traversable;
 }
-int isDestination(Cell* c,Position goal) {
+int isValidInG(Grid* g, int r, int c) {
+	// Returns true if row number and column number
+	// is in range
+	return (r >= 0) && (r < g->rows) && (c >= 0) && (c < g->cols) && g->grid[r][c].traversable;
+}
+int isDestination(Cell* c, Position goal) {
 	return (c->position.x == goal.x && c->position.y == goal.y);
 }
-int calculateCellValues(Cell* currentCell,Cell* newCell, Set* openList, Position goal) {
+int calculateCellValues(Cell* currentCell, Cell* newCell, Set* openList, Position goal) {
 	int foundDest = 0;
 	if (isDestination(newCell, goal)) {
 		newCell->parent = currentCell;
 		foundDest = 1;
 	}
-	else if(!newCell->visited){
-		double gnew= currentCell->g + 1.0;
-		double hnew= calculateHValue(&(newCell->position), &goal, euclideanDistance);
+	else if (!newCell->visited) {
+		double gnew = currentCell->g + 1.0;
+		double hnew = calculateHValue(&(newCell->position), &goal, euclideanDistance);
 		double fnew = gnew + hnew;
 		if (newCell->f > fnew) {
 			newCell->g = gnew;
@@ -454,15 +496,16 @@ int calculateCellValues(Cell* currentCell,Cell* newCell, Set* openList, Position
 	}
 	return foundDest;
 }
-Stack calculateLocalAStar(LocalGrid lg, Position globalSource, Position globalDest) {
-	Cell* localSrc = calcualteClosestCell(&lg, globalSource);
-	Cell* localDest = calcualteClosestCell(&lg, globalDest);
-	printf("rank %d:\nlocalSrc=",lg.rank);
+Stack calculateLocalAStar(LocalGrid localGrid, Position globalSource, Position globalDest) {
+	LocalGrid lg = copyGridInit(localGrid);
+	Cell* localSrc = calculateClosestCell(&lg, globalSource);
+	Cell* localDest = lg.gravity; 
+	printf("rank %d:\nlocalSrc=", lg.rank);
 	printCell(localSrc);
 	printf("localDest=");
 	printCell(localDest);
 	Stack stack = newStack(100);
-	if (isDestination(localSrc,localDest->position)) {
+	if (isDestination(localSrc, localDest->position)) {
 		printf("We are already at the destination\n");
 		return stack;
 	}
@@ -472,7 +515,7 @@ Stack calculateLocalAStar(LocalGrid lg, Position globalSource, Position globalDe
 	localSrc->h = 0;
 	localSrc->parent = localSrc;
 	Set openList = newSet(100);
-	insert(&openList ,localSrc);
+	insert(&openList, localSrc);
 	int foundDest = 0;
 	while (!isSetEmpty(&openList)) {
 		Cell* firstElement = getItemInPosition(&openList, 0);
@@ -484,8 +527,8 @@ Stack calculateLocalAStar(LocalGrid lg, Position globalSource, Position globalDe
 		for (x = -1; x < 2; x++) {
 			for (y = -1; y < 2; y++) {
 				if (!(x == 0 && y == 0) && (x == 0 || y == 0)) {
-					if (isValid(&lg, i+x, j+y)) {
-						if (calculateCellValues(&(lg.grid[i][j]),&(lg.grid[i+x][j+y]),&openList,localDest->position)) {
+					if (isValidInLG(&lg, i + x, j + y)) {
+						if (calculateCellValues(&(lg.grid[i][j]), &(lg.grid[i + x][j + y]), &openList, localDest->position)) {
 							Cell* cell = &(lg.grid[i + x][j + y]);
 							while (cell->parent != cell) {
 								push(&stack, cell);
@@ -495,7 +538,7 @@ Stack calculateLocalAStar(LocalGrid lg, Position globalSource, Position globalDe
 							return stack;
 						}
 					}
-					
+
 
 				}
 			}
@@ -506,17 +549,58 @@ Stack calculateLocalAStar(LocalGrid lg, Position globalSource, Position globalDe
 
 	return stack;
 }
+void notifyWorkers(Position cellpos,int process_number,LocalGrid* workers) {
+	int worker_id;
+	for (worker_id = 0; worker_id < process_number; worker_id++) {
+		printf("Position (%d,%d) received by worker %d\n",cellpos.x,cellpos.y,worker_id);
+		Stack stack = calculateLocalAStar(workers[worker_id], cellpos, workers[worker_id].gravity->position);
+		workers[worker_id].paths[workers[worker_id].pathsCount++] = stack;
+		printStack(&stack);
+	}
+}
+Stack getBestPath(LocalGrid worker, Position p) {
+	int i;
+	for (i = 0; i < worker.pathsCount; i++) {
 
+		
+	}
+	return worker.paths[0];
+}
+void controllerSearch(Grid g,int process_number, LocalGrid* workers) {
+
+	Stack stack = newStack(100);
+	if (isDestination(&(g.globalSrc), g.globalDest->position)) {
+		printf("We are already at the destination\n");
+		return stack;
+	}
+	Set openList = newSet(g.rows * g.cols);
+	insert(&openList, g.globalSrc);
+	int foundDest = 0;
+	while (!isSetEmpty(&openList)) {
+		Cell* firstElement = getItemInPosition(&openList, 0);
+		int i = firstElement->position.x;
+		int j = firstElement->position.y;
+		firstElement->visited = 1;
+		notifyWorkers(newPosition(i , j ), process_number, workers);
+		int assigned_worker = (i / (g.rows / (int)sqrt(process_number)) * ((int)sqrt(process_number))) + (j / (g.cols / (int)sqrt(process_number)));  //first part is simplified from i/(g.rows/(int)sqrt(process_number))* ((int)sqrt(process_number))
+		Stack path=getBestPath(workers[assigned_worker], firstElement->position);
+		removeItemInPosition(&openList, 0);
+		while (!isStackEmpty(&path)) {
+			printCell(pop(&path));
+		}
+	}
+}
 int main(int argc, char const* argv[]) {
 	if (argc == 3) {
 		const char* path = argv[1];
 		char* endpoint;
 		printf("loading %s\n", path);
-		int process_number = strtol(argv[2],&endpoint,10);
+		int process_number = strtol(argv[2], &endpoint, 10);
 		printf("number of processes to create %d\n", process_number);
 		Grid g = createGrid(path);
 		printGrid(&g);
 		int rank_id;
+		LocalGrid* workers = (LocalGrid*)malloc(sizeof(LocalGrid) * process_number);
 		for (rank_id = 0; rank_id < process_number; rank_id++) {
 			Grid localGrid;
 			localGrid.rows = g.rows / (int)sqrt(process_number);
@@ -530,14 +614,12 @@ int main(int argc, char const* argv[]) {
 				}
 
 			}
-			LocalGrid lg = newLocalGrid(localGrid.grid, rank_id,localGrid.rows,localGrid.cols);
-			printLocalGrid(&lg);
-			Stack stack=calculateLocalAStar(lg, g.globalSrc->position, g.globalDest->position);
-			printStack(&stack);
-			emptyLocalGrid(&lg);
-			printf("\n\n");
+			workers[rank_id] = newLocalGrid(localGrid.grid, rank_id, localGrid.rows, localGrid.cols);
+			workers[rank_id].gravity=calculateClosestCell(&workers[rank_id], g.globalDest->position);
+			printLocalGrid(&workers[rank_id]);
 		}
-
+		printf("initialized all workers\n\n");
+		controllerSearch(g, process_number, workers);
 		emptyGrid(&g);
 	}
 	else {
@@ -546,5 +628,5 @@ int main(int argc, char const* argv[]) {
 	}
 
 	_CrtDumpMemoryLeaks();
-	
+
 }
