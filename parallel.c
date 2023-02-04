@@ -87,7 +87,7 @@ void push(Stack* pt, Cell* c)
 			Cell** newptr = (Cell**)realloc(pt->items, pt->currentSize * sizeof(Cell*) * 2);
 
 			if (newptr) {
-				printf("Reallocating stack\n");
+				//printf("Reallocating stack\n");
 				pt->items = newptr;
 				pt->currentSize *= 2;
 			}
@@ -192,7 +192,7 @@ void insert(Set* s, Cell* c) {
 		else {
 			Cell** newptr = (Cell**)realloc(s->items, s->currentSize * sizeof(Cell*) * 2);
 			if (newptr) {
-				printf("Reallocating set\n");
+				//printf("Reallocating set\n");
 				s->items = newptr;
 				s->currentSize *= 2;
 			}
@@ -287,6 +287,9 @@ Grid createGrid(const char* filepath) {
 							g.grid[r][c] = newCell(newPosition(r, c), sup);
 							if (!g.globalSrc && r == src.x && c == src.y) {
 								g.globalSrc = &g.grid[r][c];
+								g.globalSrc->f = 0;
+								g.globalSrc->g = 0;
+								g.globalSrc->h = 0;
 							}
 							else if (!g.globalDest && r == dst.x && c == dst.y) {
 								g.globalDest = &g.grid[r][c];
@@ -336,23 +339,25 @@ void printGrid(Grid* g) {
 
 typedef struct {
 	Cell* gravity;
-	Stack* paths;
+	Cell*** paths;
 	Cell** grid;
 	int rank;
 	int maxPathsNumber;
 	int pathsCount;
 	int rows, cols;
+	int active;
 }LocalGrid;
-LocalGrid newLocalGrid(Cell** grid, int rank, int rows, int cols) {
+LocalGrid newLocalGrid(Cell** grid, int rank, int rows, int cols,int active) {
 	LocalGrid lg;
 	lg.gravity = NULL;
 	lg.rank = rank;
-	lg.maxPathsNumber = 30;
+	lg.maxPathsNumber = 3000;
 	lg.pathsCount = 0;
 	lg.rows = rows;
 	lg.cols = cols;
-	lg.paths = (Stack*)malloc(sizeof(Stack) * lg.maxPathsNumber);
+	lg.paths = (Cell***)malloc(sizeof(Cell**) * lg.maxPathsNumber);
 	lg.grid = grid;
+	lg.active = active;
 	return lg;
 }
 void emptyLocalGrid(LocalGrid* lg) {
@@ -382,7 +387,7 @@ LocalGrid copyGridInit(LocalGrid localGrid) {
 			grid[r][c] = newCell;
 		}
 	}
-	LocalGrid lg = newLocalGrid(grid, localGrid.rank, localGrid.rows, localGrid.cols);
+	LocalGrid lg = newLocalGrid(grid, localGrid.rank, localGrid.rows, localGrid.cols,localGrid.active);
 	lg.gravity = grav;
 	/*for (r = 0; r < localGrid.rows; r++) {
 		for (c = 0; c < localGrid.cols; c++) {
@@ -480,7 +485,7 @@ int calculateCellValues(Cell* currentCell, Cell* newCell, Set* openList, Positio
 		newCell->parent = currentCell;
 		foundDest = 1;
 	}
-	else if (!newCell->visited) {
+	if (!newCell->visited) {
 		double gnew = currentCell->g + 1.0;
 		double hnew = calculateHValue(&(newCell->position), &goal, euclideanDistance);
 		double fnew = gnew + hnew;
@@ -496,47 +501,73 @@ int calculateCellValues(Cell* currentCell, Cell* newCell, Set* openList, Positio
 	}
 	return foundDest;
 }
-Stack calculateLocalAStar(LocalGrid localGrid, Position globalSource, Position globalDest) {
+
+void printGridContent(Cell** grid, int cols, int rows) {
+	int r, c;
+	for (r = 0; r <rows; r++) {
+		for (c = 0; c < cols; c++) {
+			if (&(grid[r][c]))
+				printCell(&(grid[r][c]));
+			else
+				printf("NULL\n");
+		}
+	}
+}
+
+
+Cell** calculateLocalAStar(LocalGrid localGrid, Position globalSource, Position globalDest) {
+
 	LocalGrid lg = copyGridInit(localGrid);
+
 	Cell* localSrc = calculateClosestCell(&lg, globalSource);
 	Cell* localDest = lg.gravity; 
-	printf("rank %d:\nlocalSrc=", lg.rank);
-	printCell(localSrc);
-	printf("localDest=");
-	printCell(localDest);
-	Stack stack = newStack(100);
-	if (isDestination(localSrc, localDest->position)) {
-		printf("We are already at the destination\n");
-		return stack;
+	//printf("rank %d:\nlocalSrc=", lg.rank);
+	//printCell(localSrc);
+	//printf("localDest=");
+	//printCell(localDest);
+
+	if (localDest && isDestination(localSrc, localDest->position)) {
+		//printf("We are already at the destination\n");
+		return NULL;
 	}
+
 	//modifica anche fuori, lg non è passato in copia
 	localSrc->f = 0;
 	localSrc->g = 0;
 	localSrc->h = 0;
 	localSrc->parent = localSrc;
+
 	Set openList = newSet(100);
+
 	insert(&openList, localSrc);
+
 	int foundDest = 0;
+
 	while (!isSetEmpty(&openList)) {
+
 		Cell* firstElement = getItemInPosition(&openList, 0);
 		int i = firstElement->position.x % lg.rows;
 		int j = firstElement->position.y % lg.cols;
 		firstElement->visited = 1;
 		int x, y;
+
 		//printf("calculate [%d,%d]\n", i, j);
 		for (x = -1; x < 2; x++) {
 			for (y = -1; y < 2; y++) {
 				if (!(x == 0 && y == 0) && (x == 0 || y == 0)) {
+
 					if (isValidInLG(&lg, i + x, j + y)) {
-						if (calculateCellValues(&(lg.grid[i][j]), &(lg.grid[i + x][j + y]), &openList, localDest->position)) {
+
+						if (localDest && calculateCellValues(&(lg.grid[i][j]), &(lg.grid[i + x][j + y]), &openList, localDest->position)) {
 							Cell* cell = &(lg.grid[i + x][j + y]);
+							cell->visited = 1;
 							while (cell->parent != cell) {
-								push(&stack, cell);
+								//printCell(cell);
 								cell = cell->parent;
 							}
-							push(&stack, cell);
-							return stack;
+							return lg.grid;
 						}
+
 					}
 
 
@@ -544,34 +575,40 @@ Stack calculateLocalAStar(LocalGrid localGrid, Position globalSource, Position g
 			}
 
 		}
+
 		removeItemInPosition(&openList, 0);
 	}
 
-	return stack;
+	return NULL;
 }
 void notifyWorkers(Position cellpos,int process_number,LocalGrid* workers) {
 	int worker_id;
+
 	for (worker_id = 0; worker_id < process_number; worker_id++) {
-		printf("Position (%d,%d) received by worker %d\n",cellpos.x,cellpos.y,worker_id);
-		Stack stack = calculateLocalAStar(workers[worker_id], cellpos, workers[worker_id].gravity->position);
-		workers[worker_id].paths[workers[worker_id].pathsCount++] = stack;
-		printStack(&stack);
+		//printf("Position (%d,%d) received by worker %d\n",cellpos.x,cellpos.y,worker_id);
+
+		Cell** gridState = calculateLocalAStar(workers[worker_id], cellpos, workers[worker_id].gravity->position);
+		if (gridState) {
+			workers[worker_id].paths[workers[worker_id].pathsCount++] = gridState;
+		}
+		//printGrid(&gridState);
 	}
 }
-Stack getBestPath(LocalGrid worker, Position p) {
+Cell** getBestPath(LocalGrid worker, Position p) {
 	int i;
 	for (i = 0; i < worker.pathsCount; i++) {
-
-		
+		if(worker.paths[i][p.x%worker.rows][p.y % worker.cols].g==0){
+		//if (peek(&worker.paths[i])->position.x == p.x && peek(&worker.paths[i])->position.y == p.y) {
+			return worker.paths[i];
+		}
 	}
-	return worker.paths[0];
+	return NULL;
 }
 void controllerSearch(Grid g,int process_number, LocalGrid* workers) {
 
-	Stack stack = newStack(100);
-	if (isDestination(&(g.globalSrc), g.globalDest->position)) {
+	if (isDestination(g.globalSrc, g.globalDest->position)) {
 		printf("We are already at the destination\n");
-		return stack;
+		return;
 	}
 	Set openList = newSet(g.rows * g.cols);
 	insert(&openList, g.globalSrc);
@@ -580,14 +617,223 @@ void controllerSearch(Grid g,int process_number, LocalGrid* workers) {
 		Cell* firstElement = getItemInPosition(&openList, 0);
 		int i = firstElement->position.x;
 		int j = firstElement->position.y;
+
 		firstElement->visited = 1;
-		notifyWorkers(newPosition(i , j ), process_number, workers);
-		int assigned_worker = (i / (g.rows / (int)sqrt(process_number)) * ((int)sqrt(process_number))) + (j / (g.cols / (int)sqrt(process_number)));  //first part is simplified from i/(g.rows/(int)sqrt(process_number))* ((int)sqrt(process_number))
-		Stack path=getBestPath(workers[assigned_worker], firstElement->position);
-		removeItemInPosition(&openList, 0);
-		while (!isStackEmpty(&path)) {
-			printCell(pop(&path));
+		if (i == 6 && j == 1) {
+			int z = 0;
 		}
+		notifyWorkers(newPosition(i , j ), process_number, workers);
+		
+		int assigned_worker = (i / (g.rows / (int)sqrt(process_number)) * ((int)sqrt(process_number))) + (j / (g.cols / (int)sqrt(process_number)));  //first part is simplified from i/(g.rows/(int)sqrt(process_number))* ((int)sqrt(process_number))
+		int w_c;
+		for (w_c = 0; w_c < process_number; w_c++) {
+			if (w_c != assigned_worker) {
+				workers[w_c].active = 1;
+			}
+		}
+		if (workers[assigned_worker].active) {
+			
+			Cell** path=getBestPath(workers[assigned_worker], firstElement->position);
+			if(path){
+				int r, c;
+				for (r = 0; r < workers[assigned_worker].rows; r++) {
+					for (c = 0; c < workers[assigned_worker].cols; c++) {
+						Cell* localCell = &(path[r][c]);
+						Cell* globalCell = &(g.grid[localCell->position.x][localCell->position.y]);
+						//check this
+						double newG= localCell->g + firstElement->g;
+
+
+						if (newG < globalCell->g) {
+							globalCell->g = localCell->g + firstElement->g;
+							globalCell->h = calculateHValue(&(globalCell->position), &(g.globalDest->position), euclideanDistance);
+							globalCell->f = globalCell->g + globalCell->h;
+						}
+						if (!globalCell->visited && localCell->visited) {
+							printf("Visited (%d,%d)\n", globalCell->position.x, globalCell->position.y);
+						}
+						if(!globalCell->parent)
+							globalCell->visited = localCell->visited;
+						if (localCell->parent && (!globalCell->parent /* || globalCell->parent->g>localCell->parent->g*/)) {
+							globalCell->parent = &(g.grid[localCell->parent->position.x][localCell->parent->position.y]);
+						}
+						if (globalCell == g.globalDest) {
+							foundDest = 1;
+							
+						}
+
+
+						if (globalCell->visited && r == 0 && isValidInG(&g, globalCell->position.x - 1, globalCell->position.y) ) {
+							Cell* neighbor = &(g.grid[globalCell->position.x -1][globalCell->position.y]);
+							if (!neighbor->visited) {
+								neighbor->g = globalCell->g + 1;
+								neighbor->h = calculateHValue(&(neighbor->position), &(g.globalDest->position), euclideanDistance);
+								neighbor->f = neighbor->g + neighbor->h;
+								neighbor->parent = globalCell;
+								insert(&openList, neighbor);
+								printf("Added to open list: (%d,%d)\n",neighbor->position.x,neighbor->position.y);
+							}
+						}
+						else if (globalCell->visited && r == workers[assigned_worker].rows-1 && isValidInG(&g, globalCell->position.x + 1, globalCell->position.y)) {
+							Cell* neighbor = &(g.grid[globalCell->position.x + 1][globalCell->position.y]);
+							if (!neighbor->visited) {
+								neighbor->g = globalCell->g + 1;
+								neighbor->h = calculateHValue(&(neighbor->position), &(g.globalDest->position), euclideanDistance);
+								neighbor->f = neighbor->g + neighbor->h;
+								neighbor->parent = globalCell;
+								insert(&openList, neighbor);
+								printf("Added to open list: (%d,%d)\n", neighbor->position.x, neighbor->position.y);
+							}
+						}
+
+
+						if (globalCell->visited && c == 0 && isValidInG(&g, globalCell->position.x, globalCell->position.y -1)) {
+							Cell* neighbor = &(g.grid[globalCell->position.x][globalCell->position.y -1]);
+							if (!neighbor->visited) {
+								neighbor->g = globalCell->g + 1;
+								neighbor->h = calculateHValue(&(neighbor->position), &(g.globalDest->position), euclideanDistance);
+								neighbor->f = neighbor->g + neighbor->h;
+								neighbor->parent = globalCell;
+								insert(&openList, neighbor);
+								printf("Added to open list: (%d,%d)\n", neighbor->position.x, neighbor->position.y);
+							}
+						}
+						else if (globalCell->visited && c == workers[assigned_worker].cols - 1 && isValidInG(&g, globalCell->position.x , globalCell->position.y+1)) {
+							Cell* neighbor = &(g.grid[globalCell->position.x][globalCell->position.y +1]);
+							if (!neighbor->visited) {
+								neighbor->g = globalCell->g + 1;
+								neighbor->h = calculateHValue(&(neighbor->position), &(g.globalDest->position), euclideanDistance);
+								neighbor->f = neighbor->g + neighbor->h;
+								neighbor->parent = globalCell;
+								insert(&openList, neighbor);
+								printf("Added to open list: (%d,%d)\n", neighbor->position.x, neighbor->position.y);
+							}
+						}
+						if (localCell->f<INT_MAX && !globalCell->visited) {
+							insert(&openList, &(g.grid[localCell->position.x][localCell->position.y]));
+						}
+
+
+					}
+				}
+				int x, y;
+				int lastCell_i = workers[assigned_worker].gravity->position.x;
+				int lastCell_j = workers[assigned_worker].gravity->position.y;
+				for (x = -1; x < 2; x++) {
+					for (y = -1; y < 2; y++) {
+						if (!(x == 0 && y == 0) && (x == 0 || y == 0)) {
+							Cell* neighbor = &(g.grid[lastCell_i + x][lastCell_j + y]);
+							if (isValidInG(&g, lastCell_i + x, lastCell_j + y) && !neighbor->parent) {
+								if (!neighbor->visited) {
+									neighbor->g = g.grid[lastCell_i][lastCell_j].g + 1;
+									neighbor->h = calculateHValue(&(neighbor->position), &(g.globalDest->position), euclideanDistance);
+									neighbor->f = neighbor->g + neighbor->h;
+									if (!neighbor->parent || (neighbor->parent && neighbor->parent->g > g.grid[lastCell_i][lastCell_j].g)) {
+										neighbor->parent = &(g.grid[lastCell_i][lastCell_j]);
+									}
+									insert(&openList, neighbor);
+									printf("Added to open list: (%d,%d)\n", neighbor->position.x, neighbor->position.y);
+								}
+							}
+						}
+					}
+				}
+				lastCell_i = firstElement->position.x;
+				lastCell_j = firstElement->position.y;
+				for (x = -1; x < 2; x++) {
+					for (y = -1; y < 2; y++) {
+						if (!(x == 0 && y == 0) && (x == 0 || y == 0)) {
+							Cell* neighbor = &(g.grid[lastCell_i + x][lastCell_j + y]);
+							if (isValidInG(&g, lastCell_i + x, lastCell_j + y) && neighbor->f == INT_MAX) {
+								if (!neighbor->visited) {
+									neighbor->g = firstElement->g + 1;
+									neighbor->h = calculateHValue(&(neighbor->position), &(g.globalDest->position), euclideanDistance);
+									neighbor->f = neighbor->g + neighbor->h;
+									if (!neighbor->parent || (neighbor->parent && neighbor->parent->g > firstElement->g)) {
+										neighbor->parent = firstElement;
+									}
+									insert(&openList, neighbor);
+									printf("Added to open list: (%d,%d)\n", neighbor->position.x, neighbor->position.y);
+								}
+							}
+						}
+					}
+				}
+
+				
+
+			}
+			else {
+				int x, y;
+				int lastCell_i = firstElement->position.x;
+				int lastCell_j = firstElement->position.y;
+				for (x = -1; x < 2; x++) {
+					for (y = -1; y < 2; y++) {
+						if (!(x == 0 && y == 0) && (x == 0 || y == 0)) {
+							Cell* neighbor = &(g.grid[lastCell_i + x][lastCell_j + y]);
+							if (isValidInG(&g, lastCell_i + x, lastCell_j + y) && neighbor->f == INT_MAX) {
+								if (!neighbor->visited) {
+									neighbor->g = firstElement->g + 1;
+									neighbor->h = calculateHValue(&(neighbor->position), &(g.globalDest->position), euclideanDistance);
+									neighbor->f = neighbor->g + neighbor->h;
+									if (!neighbor->parent || (neighbor->parent && neighbor->parent->g > firstElement->g)) {
+										neighbor->parent = firstElement;
+									}
+									insert(&openList, neighbor);
+									printf("Added to open list: (%d,%d)\n", neighbor->position.x, neighbor->position.y);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		else {
+
+			int x, y;
+			int lastCell_i = firstElement->position.x;
+			int lastCell_j = firstElement->position.y;
+			for (x = -1; x < 2; x++) {
+				for (y = -1; y < 2; y++) {
+					if (!(x == 0 && y == 0) && (x == 0 || y == 0)) {
+						Cell* neighbor = &(g.grid[lastCell_i + x][lastCell_j + y]);
+						if (isValidInG(&g, lastCell_i + x, lastCell_j + y) && neighbor->f == INT_MAX) {
+
+							if (!neighbor->visited) {
+								neighbor->g = firstElement->g + 1;
+								neighbor->h = calculateHValue(&(neighbor->position), &(g.globalDest->position), euclideanDistance);
+								neighbor->f = neighbor->g + neighbor->h;
+								if (!neighbor->parent || (neighbor->parent && neighbor->parent->g > firstElement->g)) {
+									neighbor->parent = firstElement;
+								}
+								insert(&openList, neighbor);
+								printf("Added to open list: (%d,%d)\n", neighbor->position.x, neighbor->position.y);
+							}
+						}
+					}
+				}
+			}
+		}
+
+		removeItemInPosition(&openList, 0);
+
+		//printf("New openlist calculated based on rank :%d\n",assigned_worker);
+		//printSet(&openList);
+		//printGrid(&g);
+		workers[assigned_worker].active = 0;//TODO:riattivare worker all'uscita dal quadrato
+		if (foundDest) {
+
+			Cell* cell = g.globalDest;
+			printGridContent(g.grid, 15, 15);
+			printf("in fondo\n");
+			while (cell->parent != cell) {
+				printCell(cell);
+				cell = cell->parent;
+			}
+			printCell(cell);
+			return;
+		}
+
 	}
 }
 int main(int argc, char const* argv[]) {
@@ -614,11 +860,12 @@ int main(int argc, char const* argv[]) {
 				}
 
 			}
-			workers[rank_id] = newLocalGrid(localGrid.grid, rank_id, localGrid.rows, localGrid.cols);
+			workers[rank_id] = newLocalGrid(localGrid.grid, rank_id, localGrid.rows, localGrid.cols,1);
 			workers[rank_id].gravity=calculateClosestCell(&workers[rank_id], g.globalDest->position);
-			printLocalGrid(&workers[rank_id]);
+			//printLocalGrid(&workers[rank_id]);
 		}
 		printf("initialized all workers\n\n");
+		g.globalSrc->parent = g.globalSrc;
 		controllerSearch(g, process_number, workers);
 		emptyGrid(&g);
 	}
