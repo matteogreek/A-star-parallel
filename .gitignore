@@ -1,6 +1,6 @@
 *.exe
-testfile.txt
+*.txt
+*.png
 outputs
-*.py
 .vscode
 .vs
