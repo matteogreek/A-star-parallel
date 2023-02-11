@@ -1,0 +1,30 @@
+Fatal error in MPI_Recv: Unknown error class, error stack:
+MPI_Recv(200).........................: MPI_Recv(buf=0x7ffeea450a10, count=2, MPI_INT, src=0, tag=0, MPI_COMM_WORLD, status=0x1) failed
+MPIDU_Complete_posted_with_error(1137): Process failed
+Fatal error in MPI_Recv: Unknown error class, error stack:
+MPI_Recv(200).........................: MPI_Recv(buf=0x7fffa3ce88b0, count=2, MPI_INT, src=0, tag=0, MPI_COMM_WORLD, status=0x1) failed
+MPIDU_Complete_posted_with_error(1137): Process failed
+Fatal error in MPI_Recv: Unknown error class, error stack:
+MPI_Recv(200).........................: MPI_Recv(buf=0x7fffdfc7d3b0, count=2, MPI_INT, src=0, tag=0, MPI_COMM_WORLD, status=0x1) failed
+MPIDU_Complete_posted_with_error(1137): Process failed
+Fatal error in MPI_Recv: Unknown error class, error stack:
+MPI_Recv(200).........................: MPI_Recv(buf=0x7ffffc48e730, count=2, MPI_INT, src=0, tag=0, MPI_COMM_WORLD, status=0x1) failed
+MPIDU_Complete_posted_with_error(1137): Process failed
+Fatal error in MPI_Recv: Unknown error class, error stack:
+MPI_Recv(200).........................: MPI_Recv(buf=0x7fff19899e30, count=2, MPI_INT, src=0, tag=0, MPI_COMM_WORLD, status=0x1) failed
+MPIDU_Complete_posted_with_error(1137): Process failed
+Fatal error in MPI_Recv: Unknown error class, error stack:
+MPI_Recv(200).........................: MPI_Recv(buf=0x7ffd7dcf7c60, count=2, MPI_INT, src=0, tag=0, MPI_COMM_WORLD, status=0x1) failed
+MPIDU_Complete_posted_with_error(1137): Process failed
+Fatal error in MPI_Recv: Unknown error class, error stack:
+MPI_Recv(200).........................: MPI_Recv(buf=0x7ffd05150630, count=2, MPI_INT, src=0, tag=0, MPI_COMM_WORLD, status=0x1) failed
+MPIDU_Complete_posted_with_error(1137): Process failed
+Fatal error in MPI_Recv: Unknown error class, error stack:
+MPI_Recv(200).........................: MPI_Recv(buf=0x7ffd1159e580, count=2, MPI_INT, src=0, tag=0, MPI_COMM_WORLD, status=0x1) failed
+MPIDU_Complete_posted_with_error(1137): Process failed
+Fatal error in MPI_Recv: Unknown error class, error stack:
+MPI_Recv(200).........................: MPI_Recv(buf=0x7ffd31b3bd60, count=2, MPI_INT, src=0, tag=0, MPI_COMM_WORLD, status=0x1) failed
+MPIDU_Complete_posted_with_error(1137): Process failed
+Fatal error in MPI_Recv: Unknown error class, error stack:
+MPI_Recv(200).........................: MPI_Recv(buf=0x7ffc872963c0, count=2, MPI_INT, src=0, tag=0, MPI_COMM_WORLD, status=0x1) failed
+MPIDU_Complete_posted_with_error(1137): Process failed

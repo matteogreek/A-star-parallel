@@ -1,0 +1,3 @@
+Fatal error in MPI_Send: Unknown error class, error stack:
+MPI_Send(174): MPI_Send(buf=0x7ffee2afcfc0, count=2, MPI_INT, dest=12, tag=0, MPI_COMM_WORLD) failed
+MPID_Send(75): Communication error with rank 12

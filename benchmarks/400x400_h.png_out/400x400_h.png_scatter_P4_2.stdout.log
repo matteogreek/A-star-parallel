@@ -1,0 +1,10 @@
+Loading /home/matteo.greco/HPC_Project/inputs/400x400_h.png.txt
+Number of processes to create 4
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 31154 RUNNING AT hpc-c11-node01.unitn.it
+=   EXIT CODE: 9
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================

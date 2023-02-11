@@ -1,0 +1,12 @@
+Loading /home/matteo.greco/HPC_Project/inputs/400x400_h.png.txt
+Number of processes to create 16
+destination reached, exiting
+waiting for all processes to finish
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 64546 RUNNING AT hpc-c07-node02.unitn.it
+=   EXIT CODE: 9
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
