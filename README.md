@@ -14,7 +14,7 @@ To gain access to the HPC cluster, you must possess a cluster account that is au
   ```
 3. Connect via SSH. 
   ```
-  ssh <username>@hpc.unitn.it
+  ssh <username>@hpc2.unitn.it
   ```
 
 After having connected to the login node you can run `./test.sh` to automatically perform benchamrks on a set of input mazes. 
@@ -22,4 +22,11 @@ The default input files can be found inside the `inputs` folder. The results wil
 
 ## Results
 
-![alt text](https://github.com/matteogreek/A-star-parallel/blob/main/benchmarks/100x100_e_exec_time.png)
+
+| ![SpeedUp figure](https://github.com/matteogreek/A-star-parallel/blob/main/benchmarks/speedup.png) | 
+|:--:| 
+| *Graph representing the algorithm speedup* |
+
+| ![Efficiency figure](https://github.com/matteogreek/A-star-parallel/blob/main/benchmarks/efficiency.png) | 
+|:--:| 
+| *Graph representing the algorithm efficiency* |
