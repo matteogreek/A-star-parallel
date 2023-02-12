@@ -23,10 +23,7 @@ The default input files can be found inside the `inputs` folder. The results wil
 ## Results
 
 
-| ![SpeedUp figure](https://github.com/matteogreek/A-star-parallel/blob/main/benchmarks/speedup.png) | 
-|:--:| 
-| *Graph representing the algorithm speedup* |
+| ![SpeedUp figure](https://github.com/matteogreek/A-star-parallel/blob/main/benchmarks/speedup.png) | ![Efficiency figure](https://github.com/matteogreek/A-star-parallel/blob/main/benchmarks/efficiency.png) | 
+|:--:| :--:| 
+| *Graph representing the algorithm speedup* |*Graph representing the algorithm efficiency* |
 
-| ![Efficiency figure](https://github.com/matteogreek/A-star-parallel/blob/main/benchmarks/efficiency.png) | 
-|:--:| 
-| *Graph representing the algorithm efficiency* |
