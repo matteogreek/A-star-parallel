@@ -1,3 +1,0 @@
-root time 0.000425
-workers time 0.030573
-total time 0.589291
