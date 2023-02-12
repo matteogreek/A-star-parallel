@@ -22,3 +22,4 @@ The default input files can be found inside the `inputs` folder. The results wil
 
 ## Results
 
+![alt text](https://github.com/matteogreek/A-star-parallel/blob/main/benchmarks/100x100_e_exec_time.png)
